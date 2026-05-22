@@ -174,3 +174,6 @@ session that included a brief excursion into Vencord plugin
 development, the discovery that Node.js maintains its own CA bundle
 distinct from the system trust store, and one (1) successful
 Spanish-to-English meme translation.
+
+I am currently focusing myself on a path to improve in terms of systems administration, not making software.
+If you find this tool useful and have suggestions towards improving things please let me know.
