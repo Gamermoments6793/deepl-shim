@@ -160,6 +160,21 @@ uses:
 - Only tested with Vencord's Translate plugin on Vesktop. Other DeepL
   clients may need API extensions.
 
+## TODO List
+
+- Get a couple of good human programmers to closely look at code. 
+  Around 100 lines of "server.py" and 20 lines of "deepl-shim.service". 
+  Would be nice to have vetted code if more want to use it.
+- Translate the project to other languages. Thinking about using what 
+  I've built to automatically do this, and allow others proficient in 
+  other languages to make manual changes when needed.
+- Find a path towards mitigating the need to add a cert. 
+  Most realistic option: submit a PR to Vencord adding a 
+  "custom DeepL endpoint URL" setting. 
+  That single 20-line change would obsolete the DNS-hijack + self-signed-cert + NODE_EXTRA_CA_CERTS pipeline entirely.
+  Vencord is a mature project with tens of thousands of users, unlike this shim, that was prototyped with AI assistance.
+  Any contribution upstream will need to be hand-typed and follow their formal review process.
+
 ## License
 
 GPL-3.0-or-later — see [LICENSE](LICENSE).
