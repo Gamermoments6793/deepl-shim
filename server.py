@@ -42,6 +42,30 @@ Rules:
 
 Output the translated text directly with no surrounding content."""
 
+CONTEXTUAL_SYSTEM_PROMPT = """You are a translation engine for casual Discord chat with full conversation context.
+
+Each request includes:
+- Surrounding messages from the same Discord channel (for context, oldest first)
+- A direction: 'incoming' (translating a message someone else sent) or 'outgoing' (translating a message the user is about to send)
+- A target language code, or 'auto' (only valid with outgoing — infer the channel's primary language from the context messages)
+- The specific text to translate
+
+Rules:
+- Output ONLY the translated text — no preamble, explanation, quotes, or language labels.
+- Preserve tone, register, and slang. Casual chat stays casual. Internet slang ("xd", "lol", "tío", "vamos") should sound equally casual in the target language. Do NOT formalize.
+- Preserve emoji, mentions (@user), channel links (#channel), and code blocks (`code`) verbatim.
+- Use the context to resolve ambiguity — pronouns, references, implied subjects, sarcasm, in-jokes.
+- If the input is already in the target language, return it unchanged.
+- NEVER add commentary like "Translation:" or "Here is the translation".
+
+For outgoing direction with target='auto':
+- Determine the channel's primary language from the context messages (look at what other people are speaking).
+- Translate the text to that language.
+- Prefix your output with a single line of the form `[target=XX]` where XX is the ISO 639-1 code (EN, ES, FR, DE, JA, etc.), then a newline, then the translated text.
+- If the context is unclear or already matches the source language, default to English: `[target=EN]`.
+
+For all other cases, output the translated text directly with no prefix."""
+
 LANG_NAMES = {
     "EN": "English", "EN-US": "American English", "EN-GB": "British English",
     "ES": "Spanish", "FR": "French", "DE": "German", "IT": "Italian",
@@ -111,6 +135,98 @@ def translate():
         })
 
     return jsonify({"translations": translations})
+
+
+def translate_contextual_one(
+    text: str,
+    target_lang: str,
+    source_lang: str | None,
+    direction: str,
+    context: list,
+) -> tuple[str, str | None]:
+    """Returns (translated_text, inferred_target_lang_or_None)."""
+    is_auto = direction == "outgoing" and target_lang.lower() == "auto"
+    target_name = "infer from context" if is_auto else LANG_NAMES.get(target_lang.upper(), target_lang)
+    src_hint = (
+        f" (source hint: {LANG_NAMES.get(source_lang.upper(), source_lang)})"
+        if source_lang else ""
+    )
+
+    if context:
+        ctx_lines = [
+            f"@{(m.get('author') or '?')}: {(m.get('content') or '')}"
+            for m in context
+        ]
+        context_block = "\n".join(ctx_lines)
+    else:
+        context_block = "(no context messages provided)"
+
+    user_msg = (
+        f"Channel context (oldest first):\n{context_block}\n\n"
+        f"Direction: {direction}\n"
+        f"Target language: {target_name}{src_hint}\n\n"
+        f"Translate this message:\n{text}"
+    )
+
+    response = client.messages.create(
+        model=MODEL,
+        max_tokens=2048,
+        system=CONTEXTUAL_SYSTEM_PROMPT,
+        messages=[{"role": "user", "content": user_msg}],
+    )
+
+    raw = ""
+    for block in response.content:
+        if block.type == "text":
+            raw = block.text.strip()
+            break
+
+    inferred_target = None
+    if raw.startswith("[target="):
+        first_line, _, rest = raw.partition("\n")
+        if first_line.endswith("]"):
+            inferred_target = first_line[len("[target="):-1].strip().upper() or None
+            raw = rest.strip()
+
+    return raw, inferred_target
+
+
+@app.route("/v2/translate-contextual", methods=["POST"])
+def translate_contextual():
+    d = request.get_json(silent=True) or {}
+    text = d.get("text")
+    target_lang = d.get("target_lang") or "auto"
+    source_lang = d.get("source_lang")
+    direction = d.get("direction") or "incoming"
+    context = d.get("context") or []
+
+    if not text or not isinstance(text, str):
+        return jsonify({"message": "Missing or invalid 'text' parameter"}), 400
+    if direction not in ("incoming", "outgoing"):
+        return jsonify({"message": "'direction' must be 'incoming' or 'outgoing'"}), 400
+    if direction == "incoming" and target_lang.lower() == "auto":
+        return jsonify({"message": "'auto' target_lang is only valid for outgoing direction"}), 400
+    if not isinstance(context, list):
+        return jsonify({"message": "'context' must be a list"}), 400
+
+    try:
+        translated, inferred_target = translate_contextual_one(
+            text, target_lang, source_lang, direction, context
+        )
+    except anthropic.APIError as e:
+        app.logger.error(f"Claude API error: {e}")
+        return jsonify({"message": "translation failed", "error": str(e)}), 502
+
+    app.logger.info(
+        f"translate-contextual: {direction}, {len(context)} ctx msgs, "
+        f"{source_lang or 'auto'} -> {inferred_target or target_lang}"
+    )
+
+    return jsonify({"translations": [{
+        "detected_source_language": (source_lang or "auto").upper(),
+        "text": translated,
+        "inferred_target_language": inferred_target,
+    }]})
 
 
 @app.route("/v2/usage", methods=["GET"])
