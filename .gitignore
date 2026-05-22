@@ -1,0 +1,22 @@
+# TLS material — never commit, regenerate per install
+certs/
+*.pem
+*.key
+*.crt
+
+# Real config with actual API key — only env.template is tracked
+.env
+env
+
+# Python cruft
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo

@@ -1,0 +1,14 @@
+[Unit]
+Description=DeepL-compatible Claude translation shim (for Vencord)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+EnvironmentFile=%h/.config/deepl-shim/env
+ExecStart=%h/deepl-shim/server.py
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=default.target
