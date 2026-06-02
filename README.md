@@ -52,7 +52,7 @@ Anthropic API key:
 mkdir -p ~/.config/deepl-shim
 cp env.template ~/.config/deepl-shim/env
 chmod 600 ~/.config/deepl-shim/env
-$EDITOR ~/.config/deepl-shim/env  # paste your sk-ant-api03-... key
+$EDITOR ~/.config/deepl-shim/env  # paste your Anthropic API key
 ```
 
 ### 2. Self-signed TLS cert
@@ -138,8 +138,8 @@ The shim reads these env vars:
 | `ANTHROPIC_API_KEY`  | (required)                                |
 | `DEEPL_SHIM_HOST`    | `127.0.0.1`                               |
 | `DEEPL_SHIM_PORT`    | `443`                                     |
-| `DEEPL_SHIM_TLS_CERT`| `/home/william/deepl-shim/certs/cert.pem` |
-| `DEEPL_SHIM_TLS_KEY` | `/home/william/deepl-shim/certs/key.pem`  |
+| `DEEPL_SHIM_TLS_CERT`| `./certs/cert.pem`                        |
+| `DEEPL_SHIM_TLS_KEY` | `./certs/key.pem`                         |
 
 ## API parity
 

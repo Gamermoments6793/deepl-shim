@@ -9,7 +9,9 @@ were DeepL Free/Pro. The shim translates requests into Claude API calls.
 Configuration via environment variables:
   ANTHROPIC_API_KEY     — required, your Anthropic API key
   DEEPL_SHIM_HOST       — bind address (default 127.0.0.1; do NOT bind 0.0.0.0)
-  DEEPL_SHIM_PORT       — bind port    (default 1188)
+  DEEPL_SHIM_PORT       — bind port    (default 443)
+  DEEPL_SHIM_TLS_CERT   — TLS cert path (default ./certs/cert.pem)
+  DEEPL_SHIM_TLS_KEY    — TLS key  path (default ./certs/key.pem)
 """
 import os
 import sys
@@ -24,8 +26,8 @@ if not ANTHROPIC_API_KEY:
 
 LISTEN_HOST = os.environ.get("DEEPL_SHIM_HOST", "127.0.0.1")
 LISTEN_PORT = int(os.environ.get("DEEPL_SHIM_PORT", "443"))
-TLS_CERT = os.environ.get("DEEPL_SHIM_TLS_CERT", "/home/william/deepl-shim/certs/cert.pem")
-TLS_KEY = os.environ.get("DEEPL_SHIM_TLS_KEY", "/home/william/deepl-shim/certs/key.pem")
+TLS_CERT = os.environ.get("DEEPL_SHIM_TLS_CERT", "./certs/cert.pem")
+TLS_KEY = os.environ.get("DEEPL_SHIM_TLS_KEY", "./certs/key.pem")
 MODEL = "claude-haiku-4-5"
 
 SYSTEM_PROMPT = """You are a translation engine for casual Discord chat.
