@@ -5,6 +5,7 @@ Wants=network-online.target
 
 [Service]
 Type=simple
+WorkingDirectory=%h/deepl-shim
 EnvironmentFile=%h/.config/deepl-shim/env
 ExecStart=%h/deepl-shim/server.py
 Restart=on-failure
